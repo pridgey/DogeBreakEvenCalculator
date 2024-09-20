@@ -2,10 +2,14 @@ import "./styles.css";
 import { useState, useEffect } from "react";
 
 export default function App() {
+  const dogeOwned_Storage = window.localStorage.getItem("dogeOwned");
+  const usdInvested_Storage = window.localStorage.getItem("usdInvested");
+
+
   const [dogePrice, setDogePrice] = useState(0.068);
-  const [dogeOwned, setDogeOwned] = useState<number>(3353.35);
-  const [usdInvested, setUSDInvested] = useState<number>(1159.47);
-  const [metricSteps, setMetricSteps] = useState(5);
+  const [dogeOwned, setDogeOwned] = useState<number>(dogeOwned_Storage ?? 0);
+  const [usdInvested, setUSDInvested] = useState<number>(usdInvested_Storage ?? 0);
+  const [metricSteps, setMetricSteps] = useState(10);
 
   useEffect(() => {
     fetch("https://sochain.com//api/v2/get_price/DOGE/USD")
@@ -57,7 +61,9 @@ export default function App() {
           type="number"
           placeholder="Price of DOGE"
           value={dogePrice}
-          onChange={(e) => setDogePrice(Number(e.currentTarget.value))}
+          onChange={(e) => {
+            setDogePrice(Number(e.currentTarget.value));
+          }}
         />
       </label>
       <label style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
@@ -66,7 +72,10 @@ export default function App() {
           type="number"
           placeholder="Amount of DOGE You own"
           value={dogeOwned}
-          onChange={(e) => setDogeOwned(Number(e.currentTarget.value))}
+          onChange={(e) => {
+            window.localStorage.setItem("dogeOwned", e.currentTarget.value);
+            setDogeOwned(Number(e.currentTarget.value));
+          }}            
         />
       </label>
       <label style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
@@ -75,7 +84,10 @@ export default function App() {
           type="number"
           placeholder="Amount you've invested"
           value={usdInvested}
-          onChange={(e) => setUSDInvested(Number(e.currentTarget.value))}
+          onChange={(e) => {
+            window.localStorage.setItem("usdInvested", e.currentTarget.value);
+            setUSDInvested(Number(e.currentTarget.value));
+          }}
         />
       </label>
       <label style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
@@ -84,7 +96,7 @@ export default function App() {
           type="range"
           step="1"
           min="1"
-          max="20"
+          max="50"
           value={metricSteps}
           onChange={(e) => setMetricSteps(Number(e.currentTarget.value))}
         />

@@ -1,119 +1,157 @@
-import "./styles.css";
-import { useState, useEffect } from "react";
+import {
+  createEffect,
+  createSignal,
+  For,
+  onMount,
+  type Component,
+} from "solid-js";
 
-export default function App() {
+type DogeMetric = {
+  newDoge: number;
+  newUSD: number;
+  totalDoge: number;
+  totalInvest: number;
+  breakEven: number;
+};
+
+const App: Component = () => {
+  // Get user settings from storage
   const dogeOwned_Storage = window.localStorage.getItem("dogeOwned");
   const usdInvested_Storage = window.localStorage.getItem("usdInvested");
 
+  const [dogePrice, setDogePrice] = createSignal(0);
+  const [dogeOwned, setDogeOwned] = createSignal(
+    dogeOwned_Storage ? Number(dogeOwned_Storage) : 0
+  );
+  const [usdInvested, setUsdInvested] = createSignal(
+    usdInvested_Storage ? Number(usdInvested_Storage) : 0
+  );
+  const [metricSteps, setMetricSteps] = createSignal(15);
+  const [metrics, setMetrics] = createSignal<DogeMetric[]>([]);
 
-  const [dogePrice, setDogePrice] = useState(0.068);
-  const [dogeOwned, setDogeOwned] = useState<number>(dogeOwned_Storage ?? 0);
-  const [usdInvested, setUSDInvested] = useState<number>(usdInvested_Storage ?? 0);
-  const [metricSteps, setMetricSteps] = useState(10);
+  // Get doge price from API
+  onMount(() => {
+    fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=dogecoin&vs_currencies=usd",
+      {
+        headers: {
+          accept: "application/json",
+        },
+      }
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        setDogePrice(data.dogecoin.usd);
+      });
+  });
 
-  useEffect(() => {
-    fetch("https://sochain.com//api/v2/get_price/DOGE/USD")
-      .then((r) => r.json())
-      .then((p) => {
-        if (p.status === "success") {
-          setDogePrice(Number(p.data.prices[0].price));
-        }
-      })
-      .catch(() => console.error("failed to fetch"));
-  }, []);
-
-  const [metrics, setMetrics] = useState<any[]>([]);
-
-  useEffect(() => {
+  // Calculate strategies for breaking even
+  createEffect(() => {
     const met = [];
 
-    for (let i = 0; i < metricSteps; i++) {
-      const newDoge = i * dogeOwned;
-      const newUSD = newDoge * dogePrice;
+    for (let i = 0; i < metricSteps(); i++) {
+      const newDoge = i * dogeOwned();
+      const newUSD = newDoge * dogePrice();
 
-      const totalDoge = newDoge + dogeOwned;
-      const totalInvest = newUSD + usdInvested;
+      const totalDoge = newDoge + dogeOwned();
+      const totalInvest = newUSD + usdInvested();
 
       met.push({
         newDoge,
         newUSD,
         totalDoge,
         totalInvest,
-        breakEven: totalInvest / totalDoge
+        breakEven: totalInvest / totalDoge,
       });
     }
 
     setMetrics([...met]);
-  }, [dogePrice, dogeOwned, usdInvested, metricSteps]);
+  });
 
   return (
     <div
       style={{
         display: "flex",
-        flexDirection: "column",
+        "flex-direction": "column",
         gap: "10px",
-        fontFamily: "sans-serif"
+        "font-family": "sans-serif",
+        padding: "30px",
       }}
     >
-      <label style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+      <label
+        style={{ display: "flex", "flex-direction": "column", gap: "5px" }}
+      >
         DOGE Price
         <input
           type="number"
           placeholder="Price of DOGE"
-          value={dogePrice}
+          value={dogePrice()}
           onChange={(e) => {
             setDogePrice(Number(e.currentTarget.value));
           }}
         />
       </label>
-      <label style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+      <label
+        style={{ display: "flex", "flex-direction": "column", gap: "5px" }}
+      >
         DOGE Currently Owned
         <input
           type="number"
           placeholder="Amount of DOGE You own"
-          value={dogeOwned}
+          value={dogeOwned()}
           onChange={(e) => {
             window.localStorage.setItem("dogeOwned", e.currentTarget.value);
             setDogeOwned(Number(e.currentTarget.value));
-          }}            
+          }}
         />
       </label>
-      <label style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+      <label
+        style={{ display: "flex", "flex-direction": "column", gap: "5px" }}
+      >
         Total USD Invested
         <input
           type="number"
           placeholder="Amount you've invested"
-          value={usdInvested}
+          value={usdInvested()}
           onChange={(e) => {
             window.localStorage.setItem("usdInvested", e.currentTarget.value);
-            setUSDInvested(Number(e.currentTarget.value));
+            setUsdInvested(Number(e.currentTarget.value));
           }}
         />
       </label>
-      <label style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-        Number of Strategies Below ({metricSteps})
+      <label
+        style={{ display: "flex", "flex-direction": "column", gap: "5px" }}
+      >
+        Number of Strategies Below ({metricSteps()})
         <input
           type="range"
           step="1"
           min="1"
           max="50"
-          value={metricSteps}
-          onChange={(e) => setMetricSteps(Number(e.currentTarget.value))}
+          value={metricSteps()}
+          onInput={(e) => setMetricSteps(Number(e.currentTarget.value))}
         />
       </label>
-      {metrics.map((m) => (
-        <>
-          <h1 style={{ fontSize: "20px", margin: "5px" }}>
-            You buy {m.newDoge} more DOGE
-          </h1>
-          <ul>
-            <li>You spend ${m.newUSD} on this DOGE</li>
-            <li>Total DOGE owned becomes: {m.totalDoge}</li>
-            <li>Total Invested becomes: ${m.totalInvest}</li>
-            <li>To break even, you will sell at {m.breakEven} / DOGE</li>
-          </ul>
-        </>
-      ))}
+      <For each={metrics()}>
+        {(m) => (
+          <>
+            <h1 style={{ "font-size": "20px", margin: "5px" }}>
+              You buy {m.newDoge.toLocaleString()} more DOGE
+            </h1>
+            <ul>
+              <li>You spend ${m.newUSD.toLocaleString()} on this DOGE</li>
+              <li>Total DOGE owned becomes: {m.totalDoge.toLocaleString()}</li>
+              <li>Total Invested becomes: ${m.totalInvest.toLocaleString()}</li>
+              <li>
+                To break even, you will sell at {m.breakEven.toLocaleString()} /
+                DOGE
+              </li>
+            </ul>
+          </>
+        )}
+      </For>
     </div>
   );
-}
+};
+
+export default App;

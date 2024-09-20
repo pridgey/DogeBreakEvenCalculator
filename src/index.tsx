@@ -1,13 +1,15 @@
-import { StrictMode } from "react";
-import * as ReactDOMClient from "react-dom/client";
+/* @refresh reload */
+import { render } from 'solid-js/web';
 
-import App from "./App";
+import './index.css';
+import App from './App';
 
-const rootElement = document.getElementById("root");
-const root = ReactDOMClient.createRoot(rootElement);
+const root = document.getElementById('root');
 
-root.render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);
+if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
+  throw new Error(
+    'Root element not found. Did you forget to add it to your index.html? Or maybe the id attribute got misspelled?',
+  );
+}
+
+render(() => <App />, root!);
